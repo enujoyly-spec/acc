@@ -77,11 +77,29 @@ function formatReply(r) {
   if (r.epayment != null) lines.push(`📱 E-Payment: ${fmtBaht(r.epayment)} บาท`);
   if (r.total != null) lines.push(`🧮 ยอดรวม: ${fmtBaht(r.total)} บาท`);
   if (r.deposit != null) lines.push(`💵 นำส่งจริง: ${fmtBaht(r.deposit)} บาท`);
-  if (r.cashSales != null && r.deposit != null) {
-    const diff = r.deposit - r.cashSales;
+
+  // สลิปหลายใบ: แจกแจงรายใบ + ยอดรวมที่ระบบบวกเอง
+  if (r.slips?.length) {
+    lines.push(`🧾 สลิปที่พบ ${r.slips.length} ใบ:`);
+    r.slips.forEach((s, i) => {
+      const t = s.time ? ` (${s.time})` : '';
+      const flag = s.suspicious ? ' ⚠️' : '';
+      lines.push(`   ${i + 1}) ${fmtBaht(s.amount)} บาท${t}${flag}`);
+    });
+    lines.push(`   ➕ รวมสลิป: ${fmtBaht(r.slipsTotal)} บาท`);
+  }
+
+  // เทียบยอด: ใช้ยอดนำส่งจากรายงาน ถ้าไม่มีใช้ยอดรวมสลิปแทน
+  const actual = r.deposit ?? r.slipsTotal;
+  if (r.cashSales != null && actual != null) {
+    const diff = actual - r.cashSales;
     if (Math.abs(diff) < 0.005) lines.push('✅ พอดี (ไม่ขาดไม่เกิน)');
     else if (diff > 0) lines.push(`🔺 เกิน: ${fmtBaht(diff)} บาท`);
     else lines.push(`🔻 ขาด: ${fmtBaht(Math.abs(diff))} บาท`);
+  }
+  // ถ้ามีทั้งยอดนำส่งในรายงานและสลิป ให้เช็คไขว้กันด้วย
+  if (r.deposit != null && r.slipsTotal != null && Math.abs(r.deposit - r.slipsTotal) >= 0.005) {
+    lines.push(`⚠️ ยอดสลิปรวม (${fmtBaht(r.slipsTotal)}) ไม่ตรงกับยอดนำส่งในรายงาน (${fmtBaht(r.deposit)})`);
   }
   if (r.note) lines.push(`✍️ โน้ต: ${r.note}`);
   if (r.suspicious?.length) {
