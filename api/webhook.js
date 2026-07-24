@@ -84,6 +84,9 @@ function formatReply(r) {
     else lines.push(`🔻 ขาด: ${fmtBaht(Math.abs(diff))} บาท`);
   }
   if (r.note) lines.push(`✍️ โน้ต: ${r.note}`);
+  if (r.suspicious?.length) {
+    lines.push(`⚠️ ตัวเลขน่าสงสัย (อาจอ่านทศนิยมพลาด): ${r.suspicious.join(', ')} — กรุณาตรวจกับรูปจริงอีกครั้ง`);
+  }
   return lines.join('\n');
 }
 
