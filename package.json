@@ -1,10 +1,13 @@
 {
   "name": "line-slip-reader-bot",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "LINE OA bot อ่านสลิปโอนในกลุ่มไลน์แล้วสรุปตอบกลับ",
+  "description": "LINE OA bot อ่านรายงานปิดกะ/สลิปในกลุ่มไลน์ สรุป-เก็บสะสม-แจ้งเตือน",
   "engines": {
     "node": ">=18"
+  },
+  "dependencies": {
+    "@vercel/blob": "^2.6.1"
   }
 }
