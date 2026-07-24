@@ -1,7 +1,9 @@
-// Vercel serverless function — บอทอ่านสลิปในไลน์แล้วสรุปตอบกลับในกลุ่ม
+// Vercel serverless function — บอทอ่านรูปรายงาน/สลิปในกลุ่มไลน์ ตอบสรุป + เก็บสะสมทำสรุปรายวัน
 // GET = health check, POST = event จาก LINE
 import { verifySignature, getImageContent, replyMessage } from '../lib/line.js';
 import { readReport } from '../lib/vision.js';
+import { storeReady, appendReport, loadDay, saveGroupId } from '../lib/store.js';
+import { fmtBaht, bangkokParts, buildDailySummary } from '../lib/summary.js';
 
 // อย่าให้ Vercel แกะ body — เราต้องใช้ raw body ตรวจ signature
 export const config = { api: { bodyParser: false } };
@@ -54,11 +56,48 @@ export default async function handler(req, res) {
 }
 
 async function processEvent(event, env) {
-  // สนใจเฉพาะรูปภาพ (รายงานปิดกะ)
-  if (event.type !== 'message' || event.message?.type !== 'image') return;
+  if (event.type !== 'message') return;
+  const groupId = event.source?.groupId || null;
+
+  // ---- ข้อความ "สรุป" → สรุป 2 ช่วงเวลา + ทั้งวัน ----
+  if (event.message?.type === 'text' && /สรุป/.test(event.message.text || '')) {
+    const { dateKey, dateLabel } = bangkokParts(event.timestamp);
+    let text;
+    if (!storeReady()) {
+      text = '⚠️ ยังไม่ได้เปิดที่เก็บข้อมูล (Vercel Blob) จึงสรุปรายวันไม่ได้ — เปิดที่ Vercel: Storage → Blob → Connect Project';
+    } else {
+      const records = await loadDay(dateKey);
+      text = buildDailySummary(records, dateLabel);
+    }
+    if (event.replyToken) await replyMessage(event.replyToken, text, env.token);
+    return;
+  }
+
+  // ---- รูปภาพ (รายงานปิดกะ/สลิป) ----
+  if (event.message?.type !== 'image') return;
 
   const { buffer, contentType } = await getImageContent(event.message.id, env.token);
   const report = await readReport(buffer, contentType, { apiKey: env.apiKey, model: env.model });
+
+  // เก็บสะสมไว้ทำสรุปรายวัน + จำกลุ่มปลายทางไว้แจ้งเตือนอัตโนมัติ (ถ้าเปิด Blob แล้ว)
+  if (report?.success && storeReady()) {
+    try {
+      const { dateKey, hhmm } = bangkokParts(event.timestamp);
+      await appendReport(dateKey, {
+        time: hhmm,
+        cashSales: report.cashSales,
+        transferSales: report.transferSales,
+        epayment: report.epayment,
+        total: report.total,
+        deposit: report.deposit,
+        slipsTotal: report.slipsTotal,
+      });
+      if (groupId) await saveGroupId(groupId);
+    } catch (e) {
+      console.error('store error', e);
+    }
+  }
+
   const text = formatReply(report);
   if (event.replyToken) await replyMessage(event.replyToken, text, env.token);
   console.log('อ่านรายงาน:', JSON.stringify({
@@ -102,15 +141,12 @@ function formatReply(r) {
   if (r.deposit != null && r.slipsTotal != null && Math.abs(r.deposit - r.slipsTotal) >= 0.005) {
     lines.push(`⚠️ ยอดสลิปรวม (${fmtBaht(r.slipsTotal)}) ไม่ตรงกับยอดนำส่งในรายงาน (${fmtBaht(r.deposit)})`);
   }
+
   if (r.note) lines.push(`✍️ โน้ต: ${r.note}`);
   if (r.suspicious?.length) {
     lines.push(`⚠️ ตัวเลขน่าสงสัย (อาจอ่านทศนิยมพลาด): ${r.suspicious.join(', ')} — กรุณาตรวจกับรูปจริงอีกครั้ง`);
   }
   return lines.join('\n');
-}
-
-function fmtBaht(n) {
-  return Number(n).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
 async function getRawBody(req) {
