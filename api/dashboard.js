@@ -81,6 +81,7 @@ function renderHtml({ dateLabel, dateKey, isToday, cards, records, storeMsg, das
   const rows = records.map((r, i) => `
     <tr>
       <td>${i + 1}</td><td>${r.time || '—'}</td>
+      <td>${r.docDate ? `${r.docDate}${r.docTime ? ` ${r.docTime}` : ''}` : '—'}</td>
       <td>${money(r.cashSales)}</td><td>${money(r.transferSales)}</td>
       <td>${money(r.epayment)}</td><td>${money(r.deposit)}</td><td>${money(r.slipsTotal)}</td>
     </tr>`).join('');
@@ -121,7 +122,7 @@ ${isToday ? '<meta http-equiv="refresh" content="60">' : ''}
   .list h2 { font-size: 1rem; margin: 0 0 8px; }
   .list table { width: 100%; border-collapse: collapse; font-size: .85rem; min-width: 560px; }
   .list th, .list td { padding: 6px 8px; text-align: right; font-variant-numeric: tabular-nums; }
-  .list th:nth-child(-n+2), .list td:nth-child(-n+2) { text-align: left; }
+  .list th:nth-child(-n+3), .list td:nth-child(-n+3) { text-align: left; }
   .list thead th { border-bottom: 2px solid #dde3ea; color: #7a8794; font-weight: 600; }
   .list tbody tr:nth-child(even) { background: rgba(125,140,155,.07); }
   footer { color: #7a8794; font-size: .75rem; margin-top: 14px; }
@@ -141,8 +142,8 @@ ${isToday ? '<meta http-equiv="refresh" content="60">' : ''}
   <div class="list">
     <h2>รายการวันนี้ (${records.length})</h2>
     <table>
-      <thead><tr><th>#</th><th>เวลา</th><th>ขายเงินสด</th><th>ขายโอน</th><th>E-Pay</th><th>นำส่ง</th><th>รวมสลิป</th></tr></thead>
-      <tbody>${rows || '<tr><td colspan="7" style="text-align:center;color:#7a8794">ยังไม่มีรายการ</td></tr>'}</tbody>
+      <thead><tr><th>#</th><th>เวลาส่ง</th><th>วันที่ตามเอกสาร</th><th>ขายเงินสด</th><th>ขายโอน</th><th>E-Pay</th><th>นำส่ง</th><th>รวมสลิป</th></tr></thead>
+      <tbody>${rows || '<tr><td colspan="8" style="text-align:center;color:#7a8794">ยังไม่มีรายการ</td></tr>'}</tbody>
     </table>
   </div>
   <footer>slip-reader-bot · หน้าเว็บนี้ดึงข้อมูลจากรูปที่บอทอ่านในกลุ่มไลน์</footer>

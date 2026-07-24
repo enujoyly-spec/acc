@@ -3,7 +3,7 @@
 import { verifySignature, getImageContent, replyMessage } from '../lib/line.js';
 import { readReport } from '../lib/vision.js';
 import { storeReady, appendReport, loadDay, saveGroupId } from '../lib/store.js';
-import { fmtBaht, bangkokParts, buildDailySummary } from '../lib/summary.js';
+import { fmtBaht, bangkokParts, buildDailySummary, normalizeThaiDate } from '../lib/summary.js';
 
 // อย่าให้ Vercel แกะ body — เราต้องใช้ raw body ตรวจ signature
 export const config = { api: { bodyParser: false } };
@@ -78,13 +78,15 @@ async function processEvent(event, env) {
 
   const { buffer, contentType } = await getImageContent(event.message.id, env.token);
   const report = await readReport(buffer, contentType, { apiKey: env.apiKey, model: env.model });
+  const { dateKey, hhmm } = bangkokParts(event.timestamp);
 
   // เก็บสะสมไว้ทำสรุปรายวัน + จำกลุ่มปลายทางไว้แจ้งเตือนอัตโนมัติ (ถ้าเปิด Blob แล้ว)
   if (report?.success && storeReady()) {
     try {
-      const { dateKey, hhmm } = bangkokParts(event.timestamp);
       await appendReport(dateKey, {
         time: hhmm,
+        docDate: report.date,          // วันที่ตามเอกสาร (ตามที่อ่านได้)
+        docTime: report.docTime,       // เวลาตามเอกสาร
         cashSales: report.cashSales,
         transferSales: report.transferSales,
         epayment: report.epayment,
@@ -98,20 +100,30 @@ async function processEvent(event, env) {
     }
   }
 
-  const text = formatReply(report);
+  const text = formatReply(report, dateKey, hhmm);
   if (event.replyToken) await replyMessage(event.replyToken, text, env.token);
   console.log('อ่านรายงาน:', JSON.stringify({
-    cashSales: report?.cashSales, deposit: report?.deposit, success: report?.success,
+    docDate: report?.date, cashSales: report?.cashSales, deposit: report?.deposit, success: report?.success,
   }));
 }
 
-function formatReply(r) {
+function formatReply(r, todayKey, receivedHHMM) {
   if (!r || r.success === false) {
     return '⚠️ อ่านรูปไม่ออก รบกวนส่งรูปที่ชัดขึ้นอีกครั้งนะครับ';
   }
   const lines = ['📋 สรุปรายงานปิดกะ'];
   if (r.docNo) lines.push(`📄 เลขที่: ${r.docNo}`);
-  if (r.date) lines.push(`🗓️ วันที่: ${r.date}`);
+  if (r.date) {
+    const t = r.docTime ? ` ${r.docTime} น.` : '';
+    lines.push(`🗓️ วันที่ตามเอกสาร: ${r.date}${t}`);
+    // เตือนถ้าวันที่ในเอกสารไม่ตรงกับวันที่ส่ง (กันส่งรายงานเก่า/ผิดวัน)
+    const docKey = normalizeThaiDate(r.date);
+    if (docKey && todayKey && docKey !== todayKey) {
+      lines.push(`⚠️ วันที่ในเอกสารไม่ตรงกับวันนี้ (ส่งเมื่อ ${receivedHHMM} น.) — กรุณาตรวจสอบ`);
+    }
+  } else {
+    lines.push('🗓️ วันที่ตามเอกสาร: อ่านไม่ชัด ⚠️');
+  }
   if (r.cashSales != null) lines.push(`🧾 ยอดขายเงินสด: ${fmtBaht(r.cashSales)} บาท`);
   if (r.transferSales != null) lines.push(`🏦 ยอดขายโอน: ${fmtBaht(r.transferSales)} บาท`);
   if (r.epayment != null) lines.push(`📱 E-Payment: ${fmtBaht(r.epayment)} บาท`);
