@@ -1,7 +1,7 @@
 // Vercel serverless function — บอทอ่านสลิปในไลน์แล้วสรุปตอบกลับในกลุ่ม
 // GET = health check, POST = event จาก LINE
 import { verifySignature, getImageContent, replyMessage } from '../lib/line.js';
-import { readSlip } from '../lib/vision.js';
+import { readReport } from '../lib/vision.js';
 
 // อย่าให้ Vercel แกะ body — เราต้องใช้ raw body ตรวจ signature
 export const config = { api: { bodyParser: false } };
@@ -53,25 +53,43 @@ export default async function handler(req, res) {
 }
 
 async function processEvent(event, env) {
-  // สนใจเฉพาะรูปภาพ (สลิป)
+  // สนใจเฉพาะรูปภาพ (รายงานปิดกะ)
   if (event.type !== 'message' || event.message?.type !== 'image') return;
 
   const { buffer, contentType } = await getImageContent(event.message.id, env.token);
-  const slip = await readSlip(buffer, contentType, { apiKey: env.apiKey, model: env.model });
-  const text = formatReply(slip);
+  const report = await readReport(buffer, contentType, { apiKey: env.apiKey, model: env.model });
+  const text = formatReply(report);
   if (event.replyToken) await replyMessage(event.replyToken, text, env.token);
-  console.log('อ่านสลิป:', slip?.amount ?? 'อ่านไม่ออก');
+  console.log('อ่านรายงาน:', JSON.stringify({
+    cashSales: report?.cashSales, deposit: report?.deposit, success: report?.success,
+  }));
 }
 
-function formatReply(slip) {
-  if (!slip || slip.amount == null || slip.success === false) {
-    return '⚠️ อ่านสลิปไม่ออก รบกวนส่งรูปที่ชัดขึ้นอีกครั้งนะครับ';
+function formatReply(r) {
+  if (!r || r.success === false) {
+    return '⚠️ อ่านรูปไม่ออก รบกวนส่งรูปที่ชัดขึ้นอีกครั้งนะครับ';
   }
-  const lines = ['✅ อ่านสลิปแล้ว', `💰 จำนวนเงิน: ${fmtBaht(slip.amount)} บาท`];
-  if (slip.datetime) lines.push(`🕒 เวลา: ${slip.datetime}`);
-  if (slip.sender) lines.push(`➡️ ผู้โอน: ${slip.sender}`);
-  if (slip.receiver) lines.push(`⬅️ ผู้รับ: ${slip.receiver}`);
-  if (slip.ref) lines.push(`#️⃣ อ้างอิง: ${slip.ref}`);
+  const lines = ['📋 สรุปรายงานปิดกะ'];
+  const cs = r.cashSales;
+  const dp = r.deposit;
+  if (cs != null) lines.push(`🧾 ยอดขายเงินสด: ${fmtBaht(cs)} บาท`);
+  if (dp != null) lines.push(`💵 นำส่งจริง: ${fmtBaht(dp)} บาท`);
+  if (cs != null && dp != null) {
+    const diff = dp - cs;
+    if (Math.abs(diff) < 0.005) lines.push('✅ พอดี (ไม่ขาดไม่เกิน)');
+    else if (diff > 0) lines.push(`🔺 เกิน: ${fmtBaht(diff)} บาท`);
+    else lines.push(`🔻 ขาด: ${fmtBaht(Math.abs(diff))} บาท`);
+  }
+  if (r.summary) {
+    lines.push('——');
+    lines.push(r.summary);
+  }
+  // ถ้าอ่านตัวเลขไม่เจอเลย แนบข้อความที่อ่านได้ทั้งหมดให้ดู
+  if (cs == null && dp == null && r.allText) {
+    lines.push('——');
+    lines.push('ข้อความที่อ่านได้:');
+    lines.push(r.allText.slice(0, 1500));
+  }
   return lines.join('\n');
 }
 
