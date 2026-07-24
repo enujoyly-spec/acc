@@ -1,0 +1,13 @@
+{
+  "name": "line-store-cash-bot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "LINE OA bot ตรวจเงินสด+เงินโอนรายวันของร้าน แล้วบันทึกลง Google Sheets",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "googleapis": "^144.0.0"
+  }
+}
