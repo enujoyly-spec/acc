@@ -8,7 +8,14 @@ export default async function handler(req, res) {
     return res.status(401).send('unauthorized');
   }
 
-  const { dateKey, dateLabel } = bangkokParts(Date.now());
+  // ฟิลเตอร์วันที่: ?date=YYYY-MM-DD (ไม่ระบุ = วันนี้)
+  const today = bangkokParts(Date.now());
+  const qDate = /^\d{4}-\d{2}-\d{2}$/.test(req.query?.date || '') ? req.query.date : null;
+  const dateKey = qDate || today.dateKey;
+  const [y, m, d] = dateKey.split('-');
+  const dateLabel = `${d}/${m}/${y}`;
+  const isToday = dateKey === today.dateKey;
+
   let records = [];
   let storeMsg = '';
   if (!storeReady()) {
@@ -30,7 +37,16 @@ export default async function handler(req, res) {
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'no-store');
-  return res.status(200).send(renderHtml(dateLabel, cards, records, storeMsg));
+  return res.status(200).send(renderHtml({
+    dateLabel, dateKey, isToday, cards, records, storeMsg,
+    dashKey: process.env.DASHBOARD_KEY ? req.query?.k : null,
+  }));
+}
+
+function shiftDate(dateKey, days) {
+  const d = new Date(`${dateKey}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
 }
 
 function money(v) {
@@ -44,7 +60,10 @@ function diffBadge(diff) {
   return `<span class="badge short">🔻 ขาด ${fmtBaht(Math.abs(diff))}</span>`;
 }
 
-function renderHtml(dateLabel, cards, records, storeMsg) {
+function renderHtml({ dateLabel, dateKey, isToday, cards, records, storeMsg, dashKey }) {
+  const keyParam = dashKey ? `&k=${encodeURIComponent(dashKey)}` : '';
+  const prev = shiftDate(dateKey, -1);
+  const next = shiftDate(dateKey, 1);
   const cardHtml = cards.map(({ title, t }) => `
     <div class="card">
       <h2>${title}</h2>
@@ -70,14 +89,21 @@ function renderHtml(dateLabel, cards, records, storeMsg) {
 <html lang="th"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="refresh" content="60">
+${isToday ? '<meta http-equiv="refresh" content="60">' : ''}
 <title>แดชบอร์ดตรวจเงินร้าน</title>
 <style>
   :root { color-scheme: light dark; }
   body { font-family: system-ui, 'Segoe UI', sans-serif; margin: 0; padding: 16px; background: #f4f6f9; color: #1c2733; }
   @media (prefers-color-scheme: dark) { body { background: #10151c; color: #e6edf3; } .card, .list { background: #1a222d !important; } }
   h1 { font-size: 1.25rem; margin: 0 0 4px; }
-  .sub { color: #7a8794; font-size: .85rem; margin-bottom: 16px; }
+  .sub { color: #7a8794; font-size: .85rem; margin-bottom: 10px; }
+  .datebar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .datebar input[type=date] { padding: 6px 10px; border-radius: 10px; border: 1px solid #cfd6de; background: #fff; font: inherit; }
+  @media (prefers-color-scheme: dark) { .datebar input[type=date] { background: #1a222d; color: #e6edf3; border-color: #38434f; } }
+  .nav { display: inline-block; padding: 6px 12px; border-radius: 10px; background: #e9ecf1; color: inherit; text-decoration: none; font-size: .85rem; }
+  @media (prefers-color-scheme: dark) { .nav { background: #242f3b; } }
+  .nav.off { opacity: .4; }
+  .nav.today { background: #d1e7dd; color: #0f5132; }
   .warn { background: #fff3cd; color: #664d03; padding: 10px 14px; border-radius: 10px; margin-bottom: 16px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
   .card { background: #fff; border-radius: 14px; padding: 14px 16px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
@@ -102,7 +128,14 @@ function renderHtml(dateLabel, cards, records, storeMsg) {
 </style></head>
 <body>
   <h1>📊 แดชบอร์ดตรวจเงินร้าน</h1>
-  <div class="sub">วันที่ ${dateLabel} · อัปเดตอัตโนมัติทุก 60 วินาที</div>
+  <div class="sub">วันที่ ${dateLabel}${isToday ? ' (วันนี้) · อัปเดตอัตโนมัติทุก 60 วินาที' : ''}</div>
+  <div class="datebar">
+    <a class="nav" href="?date=${prev}${keyParam}">← ก่อนหน้า</a>
+    <input type="date" value="${dateKey}" max="${bangkokParts(Date.now()).dateKey}"
+      onchange="location.href='?date='+this.value+'${keyParam}'">
+    ${isToday ? '<span class="nav off">ถัดไป →</span>' : `<a class="nav" href="?date=${next}${keyParam}">ถัดไป →</a>`}
+    ${isToday ? '' : `<a class="nav today" href="?${keyParam.replace(/^&/, '')}">วันนี้</a>`}
+  </div>
   ${storeMsg ? `<div class="warn">⚠️ ${storeMsg}</div>` : ''}
   <div class="grid">${cardHtml}</div>
   <div class="list">
