@@ -70,26 +70,20 @@ function formatReply(r) {
     return '⚠️ อ่านรูปไม่ออก รบกวนส่งรูปที่ชัดขึ้นอีกครั้งนะครับ';
   }
   const lines = ['📋 สรุปรายงานปิดกะ'];
-  const cs = r.cashSales;
-  const dp = r.deposit;
-  if (cs != null) lines.push(`🧾 ยอดขายเงินสด: ${fmtBaht(cs)} บาท`);
-  if (dp != null) lines.push(`💵 นำส่งจริง: ${fmtBaht(dp)} บาท`);
-  if (cs != null && dp != null) {
-    const diff = dp - cs;
+  if (r.docNo) lines.push(`📄 เลขที่: ${r.docNo}`);
+  if (r.date) lines.push(`🗓️ วันที่: ${r.date}`);
+  if (r.cashSales != null) lines.push(`🧾 ยอดขายเงินสด: ${fmtBaht(r.cashSales)} บาท`);
+  if (r.transferSales != null) lines.push(`🏦 ยอดขายโอน: ${fmtBaht(r.transferSales)} บาท`);
+  if (r.epayment != null) lines.push(`📱 E-Payment: ${fmtBaht(r.epayment)} บาท`);
+  if (r.total != null) lines.push(`🧮 ยอดรวม: ${fmtBaht(r.total)} บาท`);
+  if (r.deposit != null) lines.push(`💵 นำส่งจริง: ${fmtBaht(r.deposit)} บาท`);
+  if (r.cashSales != null && r.deposit != null) {
+    const diff = r.deposit - r.cashSales;
     if (Math.abs(diff) < 0.005) lines.push('✅ พอดี (ไม่ขาดไม่เกิน)');
     else if (diff > 0) lines.push(`🔺 เกิน: ${fmtBaht(diff)} บาท`);
     else lines.push(`🔻 ขาด: ${fmtBaht(Math.abs(diff))} บาท`);
   }
-  if (r.summary) {
-    lines.push('——');
-    lines.push(r.summary);
-  }
-  // ถ้าอ่านตัวเลขไม่เจอเลย แนบข้อความที่อ่านได้ทั้งหมดให้ดู
-  if (cs == null && dp == null && r.allText) {
-    lines.push('——');
-    lines.push('ข้อความที่อ่านได้:');
-    lines.push(r.allText.slice(0, 1500));
-  }
+  if (r.note) lines.push(`✍️ โน้ต: ${r.note}`);
   return lines.join('\n');
 }
 
