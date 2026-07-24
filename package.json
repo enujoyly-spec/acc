@@ -1,13 +1,10 @@
 {
-  "name": "line-store-cash-bot",
-  "version": "0.1.0",
+  "name": "line-slip-reader-bot",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
-  "description": "LINE OA bot ตรวจเงินสด+เงินโอนรายวันของร้าน แล้วบันทึกลง Google Sheets",
+  "description": "LINE OA bot อ่านสลิปโอนในกลุ่มไลน์แล้วสรุปตอบกลับ",
   "engines": {
     "node": ">=18"
-  },
-  "dependencies": {
-    "googleapis": "^144.0.0"
   }
 }
