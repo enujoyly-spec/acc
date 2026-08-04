@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>ยอดขายย้อนหลัง 30 วัน — ร้านมั่งมีฟู้ด</title>
+<style>
+  :root {
+    --navy:#1E2A44; --navy2:#2A3A5C; --page:#F4F6FA; --card:#FFFFFF;
+    --ink:#1F2937; --muted:#8A94A6; --line:#E8EDF4;
+    --coral:#F0616B; --coral-d:#D8434E; --green:#3BA776; --green-bg:#E7F6EE;
+    --amber:#E08A1E; --amber-bg:#FFF8EC; --amber-line:#F4DFBC;
+    --red:#DC4B4B; --red-bg:#FDF1F1; --red-line:#F6D5D5;
+  }
+  * { box-sizing:border-box }
+  html { background:var(--page) }
+  body {
+    margin:0; display:flex; min-height:100vh; background:var(--page); color:var(--ink);
+    font-family:"Sukhumvit Set","Noto Sans Thai","Prompt",-apple-system,"Segoe UI",sans-serif;
+    font-size:15px; line-height:1.6;
+  }
+  a { color:inherit; text-decoration:none }
+
+  /* ---------- แถบซ้าย ---------- */
+  .side {
+    width:210px; flex:0 0 210px; background:var(--navy); color:#C7D0E0;
+    padding:26px 0 30px; position:sticky; top:0; height:100vh; overflow:auto;
+  }
+  .brand { font-size:17px; font-weight:800; color:#fff; padding:0 24px 26px }
+  .brand b { color:var(--coral) }
+  .side a.nav, .side span.nav {
+    display:block; padding:10px 24px; font-size:14.5px; color:#AEB9CC;
+  }
+  .side a.nav:hover { background:rgba(255,255,255,.05); color:#fff }
+  .side .on { background:var(--navy2); color:#fff; font-weight:700;
+              box-shadow:inset 3px 0 0 var(--coral) }
+  .side .off { color:#5C6B87; cursor:not-allowed }
+  .side .off:after { content:" · เฟสถัดไป"; font-size:11px; opacity:.7 }
+  .side .who { padding:22px 24px 0; font-size:12px; color:#67748F; line-height:1.5 }
+
+  /* ---------- เนื้อหา ---------- */
+  .main { flex:1; padding:26px 30px 70px; min-width:0 }
+  .head { display:flex; flex-wrap:wrap; gap:14px; align-items:flex-start;
+          justify-content:space-between; margin-bottom:20px }
+  h1 { font-size:25px; font-weight:800; margin:0 0 4px }
+  .sub { color:var(--muted); font-size:13.5px; margin:0 }
+  .btns { display:flex; gap:9px; flex-wrap:wrap }
+  .btn { border:1px solid var(--line); background:#fff; border-radius:9px;
+         padding:8px 15px; font-size:13.5px; font-weight:600; white-space:nowrap }
+  .btn.green { background:var(--green); border-color:var(--green); color:#fff }
+  .btn.coral { background:var(--coral); border-color:var(--coral); color:#fff }
+
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 18px }
+  .chips a { font-size:13px; border:1px solid var(--line); background:#fff;
+             border-radius:99px; padding:5px 15px }
+  .chips a.sel { border-color:var(--coral); color:var(--coral-d); font-weight:700;
+                 background:#FFF5F6 }
+
+  /* ---------- การ์ดตัวเลข ---------- */
+  .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(215px,1fr));
+           gap:14px; margin-bottom:18px }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:13px;
+          padding:15px 18px }
+  .stat .k { font-size:13px; color:var(--muted); margin-bottom:5px }
+  .stat .v { font-size:29px; font-weight:800; line-height:1.15; letter-spacing:-.5px }
+  .stat .v small { font-size:13px; font-weight:600; color:var(--muted); margin-left:4px }
+  .stat .n { font-size:12.5px; color:var(--muted); margin-top:3px }
+  .stat.warn { background:var(--amber-bg); border-color:var(--amber-line) }
+  .stat.warn .v, .stat.warn .k { color:var(--amber) }
+  .stat.bad { background:var(--red-bg); border-color:var(--red-line) }
+  .stat.bad .v, .stat.bad .k { color:var(--red) }
+  .up { color:var(--green); font-weight:700 }
+  .down { color:var(--red); font-weight:700 }
+
+  /* ---------- กล่องเนื้อหา ---------- */
+  .grid { display:grid; gap:14px; grid-template-columns:1.35fr 1fr .9fr; align-items:start }
+  @media (max-width:1150px){ .grid { grid-template-columns:1fr } }
+  .box { background:var(--card); border:1px solid var(--line); border-radius:13px;
+         padding:16px 18px }
+  .box h2 { font-size:15.5px; font-weight:800; margin:0 0 12px;
+            display:flex; align-items:center; justify-content:space-between; gap:10px }
+  .tag { font-size:11.5px; font-weight:700; color:var(--coral-d); background:#FFF5F6;
+         border-radius:99px; padding:2px 10px; white-space:nowrap }
+
+  table { width:100%; border-collapse:collapse; font-size:13.5px }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line);
+           white-space:nowrap }
+  tr:last-child td { border-bottom:none }
+  th { font-size:11.5px; color:var(--muted); font-weight:700; letter-spacing:.03em }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums }
+  td.name { white-space:normal; font-weight:600; min-width:150px }
+  tr.warn td { background:var(--amber-bg) }
+  tr.bad  td { background:var(--red-bg) }
+  .red { color:var(--red); font-weight:700 }
+  .amber { color:var(--amber); font-weight:700 }
+  .pill { display:inline-block; font-size:11.5px; font-weight:700; border-radius:99px;
+          padding:2px 10px; white-space:nowrap }
+  .p-ok { background:var(--green-bg); color:#1F7A4C }
+  .p-low { background:#FDF3D6; color:#946200 }
+  .p-out { background:#FDE7E7; color:#B3382E }
+  .p-exp { background:#FDF3D6; color:#946200 }
+
+  /* ---------- กราฟแท่ง ---------- */
+  .chart { display:flex; align-items:flex-end; gap:6px; height:180px; padding:6px 0 0 }
+  .bar { flex:1 1 0; max-width:46px; display:flex; flex-direction:column;
+         justify-content:flex-end; align-items:center; height:100%; gap:5px }
+  .bar i { display:block; width:100%; background:#C9D2E0; border-radius:5px 5px 0 0 }
+  .bar.hot i { background:var(--coral) }
+  .bar span { font-size:10.5px; color:var(--muted) }
+  .axis { display:flex; justify-content:space-between; font-size:11.5px;
+          color:var(--muted); margin-top:4px }
+  .note { font-size:12.5px; color:var(--muted); margin:12px 0 0 }
+  .note b { color:var(--green) }
+
+  /* ---------- สถานะว่าง ---------- */
+  .gbars { display:grid; gap:9px; padding-top:2px }
+  .gbar { display:grid; grid-template-columns:132px 1fr 78px; align-items:center; gap:10px }
+  .gbar span { font-size:12.5px; color:var(--muted); overflow:hidden;
+               text-overflow:ellipsis; white-space:nowrap }
+  .gbar i { display:block; height:15px; background:var(--coral); border-radius:4px;
+            min-width:3px; opacity:.85 }
+  .gbar b { font-size:12.5px; text-align:right; font-variant-numeric:tabular-nums }
+  .stat .v.dash { color:#C9D2E0 }
+  .empty { border:1px dashed #D3DCE8; border-radius:11px; padding:20px;
+           text-align:center; color:var(--muted); font-size:13px; background:#FBFCFE }
+  .empty b { display:block; color:var(--ink); font-size:14px; margin-bottom:4px }
+  .expcard { border:1px solid var(--line); border-radius:11px; padding:11px 13px;
+             margin-bottom:9px }
+  .expcard b { display:block; font-size:14px }
+  .expcard span { font-size:12px; color:var(--muted) }
+  .foot { margin-top:26px; color:var(--muted); font-size:12.5px }
+</style></head><body>
+<div class="side"><div class="brand">ระบบสต๊อก <b>มั่งมี</b></div><span class="nav off">รับเข้าสินค้า</span><span class="nav off">เบิกออก</span><a class="nav" href="stock.html">ยอดคงเหลือ</a><span class="nav off">นับสต๊อก</span><a class="nav" href="index.html">รายงานประจำวัน</a><span class="nav on">ยอดขาย 30 วัน</span><span class="nav off">ตู้แช่</span><span class="nav off">ตั้งค่า</span><div class="who">เข้าใช้งาน: พี่จอย<br>(ร้านมั่งมีฟู้ด)</div></div>
+<div class="main">
+  <div class="head">
+    <div><h1>ยอดขายย้อนหลัง 30 วัน</h1><p class="sub">26 ก.ค. 69 · ข้อมูลจากเมล SeniorSoft ProMaxx รอบ 12:00 และรอบปิดวัน 20:10</p></div>
+    <div class="btns"><span class="btn green">ส่งสรุปเข้า LINE</span></div>
+  </div>
+  
+  <div class="chips"><a href="history.html">ภาพรวม 30 วัน</a><a href="day-20260803.html">3 ส.ค. 69</a><a href="day-20260802.html">2 ส.ค. 69</a><a href="day-20260801.html">1 ส.ค. 69</a><a href="day-20260731.html">31 ก.ค. 69</a><a href="day-20260730.html">30 ก.ค. 69</a><a href="day-20260729.html">29 ก.ค. 69</a><a href="day-20260728.html">28 ก.ค. 69</a><a href="day-20260727.html">27 ก.ค. 69</a><a class="sel" href="day-20260726.html">26 ก.ค. 69</a><a href="day-20260725.html">25 ก.ค. 69</a><a href="day-20260724.html">24 ก.ค. 69</a><a href="day-20260723.html">23 ก.ค. 69</a><a href="day-20260722.html">22 ก.ค. 69</a><a href="day-20260721.html">21 ก.ค. 69</a><a href="day-20260720.html">20 ก.ค. 69</a><a href="day-20260719.html">19 ก.ค. 69</a><a href="day-20260718.html">18 ก.ค. 69</a><a href="day-20260717.html">17 ก.ค. 69</a><a href="day-20260716.html">16 ก.ค. 69</a><a href="day-20260715.html">15 ก.ค. 69</a><a href="day-20260714.html">14 ก.ค. 69</a><a href="day-20260713.html">13 ก.ค. 69</a><a href="day-20260712.html">12 ก.ค. 69</a><a href="day-20260711.html">11 ก.ค. 69</a><a href="day-20260710.html">10 ก.ค. 69</a><a href="day-20260709.html">9 ก.ค. 69</a><a href="day-20260708.html">8 ก.ค. 69</a><a href="day-20260707.html">7 ก.ค. 69</a><a href="day-20260706.html">6 ก.ค. 69</a><a href="day-20260705.html">5 ก.ค. 69</a></div><div class="stats"><div class="stat "><div class="k">ยอดขาย 26 ก.ค. 69</div><div class="v">242,185<small>บาท</small></div><div class="n"><span class="up">+3.2%</span> เทียบเฉลี่ย 30 วัน</div></div><div class="stat "><div class="k">กะเช้า (ถึง 12:00)</div><div class="v">101,151<small>บาท</small></div><div class="n">42% ของทั้งวัน</div></div><div class="stat "><div class="k">กะบ่าย (12:00–ปิดวัน)</div><div class="v">141,034<small>บาท</small></div><div class="n">58% ของทั้งวัน</div></div></div><div class="box"><h2>แยกสาขา<span class="tag">เมลรอบ 12:00 / 20:10</span></h2><table><thead><tr><th>สาขา</th><th class="num">กะเช้า</th><th class="num">กะบ่าย</th><th class="num">รวม</th><th class="num">สัดส่วน</th></tr></thead><tbody><tr><td class="name">หนองดอก</td><td class="num">67,381</td><td class="num">62,703</td><td class="num"><b>130,083</b></td><td class="num">54%</td></tr><tr><td class="name">จอมทอง</td><td class="num">19,144</td><td class="num">57,186</td><td class="num"><b>76,330</b></td><td class="num">32%</td></tr><tr><td class="name">บ้านเส้ง</td><td class="num">14,626</td><td class="num">21,145</td><td class="num"><b>35,771</b></td><td class="num">15%</td></tr></tbody></table></div>
+  <div class="foot">สร้างเมื่อ 04/08/2026 15:39 ·
+    ข้อมูลจากรายงานที่ SeniorSoft ส่งออก — ระบบไม่ได้แตะฐานข้อมูลเดิม</div>
+</div></body></html>
