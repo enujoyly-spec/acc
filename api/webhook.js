@@ -66,9 +66,11 @@ async function processEvent(event, env) {
   if (event.message?.type === 'text' && !/สรุป/.test(event.message.text || '')) {
     const route = routeText(event.message.text);
     if (route) {
-      const text = await handleMangmee(route, env);
-      if (text && event.replyToken) await replyMessage(event.replyToken, text, env.token);
-      if (text) return;
+      const msgs = await handleMangmee(route, env);
+      if (msgs?.length) {
+        if (event.replyToken) await replyMessage(event.replyToken, msgs, env.token);
+        return;
+      }
     }
   }
 
@@ -142,15 +144,26 @@ async function processEvent(event, env) {
 }
 
 // ตอบคำถามเรื่องยอด/เงินสด/ของที่ต้องสั่ง และจำว่าอะไรสั่งไปแล้ว
+// ห่อ try/catch ไว้ชั้นนอก — ถ้าพังแล้วเงียบ ผู้ใช้จะนึกว่าบอทตายไปเฉยๆ
 async function handleMangmee(route, env) {
+  try {
+    return await mangmeeReply(route, env);
+  } catch (e) {
+    console.error('mangmee reply error', e);
+    return [`⚠️ ตอบไม่ได้ตอนนี้ครับ (${e?.name || 'error'}) — ลองใหม่อีกครั้ง ` +
+            'หรือพิมพ์ "ช่วย" เพื่อดูคำสั่งที่ใช้ได้'];
+  }
+}
+
+async function mangmeeReply(route, env) {
   const dateKey = todayBangkok();
 
   if (route.kind === 'order-add' || route.kind === 'order-del') {
     const fn = route.kind === 'order-add' ? addOrder : removeOrder;
     const items = await fn(dateKey, route.name);
     if (items === null) {
-      return '⚠️ ยังไม่ได้เปิด Vercel Blob จึงจำรายการที่สั่งแล้วไม่ได้ ' +
-             '(Vercel: Storage → Blob → Connect Project)';
+      return ['⚠️ ยังไม่ได้เปิด Vercel Blob จึงจำรายการที่สั่งแล้วไม่ได้ ' +
+              '(Vercel: Storage → Blob → Connect Project)'];
     }
     const verb = route.kind === 'order-add' ? 'จำไว้แล้ว' : 'เอากลับเข้ารายการแล้ว';
     let tail = '';
@@ -160,21 +173,24 @@ async function handleMangmee(route, env) {
         (o) => !items.some((n) => o.name.toLowerCase().includes(n.toLowerCase())));
       tail = `\nเหลือที่ยังต้องสั่งอีก ${left.length} รายการ — พิมพ์ "ต้องสั่งอะไรบ้าง" เพื่อดู`;
     } catch { /* ไม่มี snapshot ก็ยังจำได้ */ }
-    return `✅ ${route.name} — ${verb}${tail}`;
+    return [`✅ ${route.name} — ${verb}${tail}`];
   }
 
   let snap;
   try {
     snap = await loadSnapshot(env.req);
   } catch {
-    return '⚠️ ยังไม่มีข้อมูลสรุป — ต้องรัน `mangmee.py web` ที่เครื่องร้านแล้ว push ขึ้นมาก่อน';
+    return ['⚠️ ยังไม่มีข้อมูลสรุป — ต้องรัน `mangmee.py web` ที่เครื่องร้านแล้ว push ขึ้นมาก่อน'];
   }
   const orders = await loadOrders(dateKey);
-  const text = answer(route.kind, snap, orders);
-  if (!text) return null;
-  const stale = snap.day !== dateKey
-    ? `\n\n(ข้อมูลล่าสุดถึง ${snap.dayLabel} · อัปเดต ${snap.generated})` : '';
-  return text + stale;
+  const msgs = answer(route.kind, snap, orders);
+  if (!msgs?.length) return null;
+
+  // ข้อมูลมาจาก snapshot ที่ build ไว้ ถ้าไม่ใช่ของวันนี้ต้องบอกให้รู้ ไม่งั้นเข้าใจผิด
+  if (snap.day !== dateKey && typeof msgs[0] === 'string') {
+    msgs[0] += `\n(ข้อมูลล่าสุดถึง ${snap.dayLabel} · อัปเดต ${snap.generated})`;
+  }
+  return msgs;
 }
 
 function formatReply(r, todayKey, receivedHHMM, backdated) {
