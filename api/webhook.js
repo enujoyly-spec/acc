@@ -4,6 +4,9 @@ import { verifySignature, getImageContent, replyMessage } from '../lib/line.js';
 import { readReport } from '../lib/vision.js';
 import { storeReady, appendReport, loadDay, saveGroupId } from '../lib/store.js';
 import { fmtBaht, bangkokParts, buildDailySummary, normalizeThaiDate } from '../lib/summary.js';
+import {
+  loadSnapshot, loadOrders, addOrder, removeOrder, routeText, answer, todayBangkok,
+} from '../lib/mangmee.js';
 
 // อย่าให้ Vercel แกะ body — เราต้องใช้ raw body ตรวจ signature
 export const config = { api: { bodyParser: false } };
@@ -47,7 +50,7 @@ export default async function handler(req, res) {
 
   for (const event of body.events || []) {
     try {
-      await processEvent(event, env);
+      await processEvent(event, { ...env, req });
     } catch (e) {
       console.error('process event error', e);
     }
@@ -58,6 +61,16 @@ export default async function handler(req, res) {
 async function processEvent(event, env) {
   if (event.type !== 'message') return;
   const groupId = event.source?.groupId || null;
+
+  // ---- คุยเรื่องยอดขาย/เงินสด/สั่งของ (ข้อมูลจาก mangmee) ----
+  if (event.message?.type === 'text' && !/สรุป/.test(event.message.text || '')) {
+    const route = routeText(event.message.text);
+    if (route) {
+      const text = await handleMangmee(route, env);
+      if (text && event.replyToken) await replyMessage(event.replyToken, text, env.token);
+      if (text) return;
+    }
+  }
 
   // ---- ข้อความ "สรุป" → สรุปวันนี้ / "สรุปเมื่อวาน" / "สรุป 23/07/2569" ----
   if (event.message?.type === 'text' && /สรุป/.test(event.message.text || '')) {
@@ -126,6 +139,42 @@ async function processEvent(event, env) {
   console.log('อ่านรายงาน:', JSON.stringify({
     docDate: report?.date, cashSales: report?.cashSales, deposit: report?.deposit, success: report?.success,
   }));
+}
+
+// ตอบคำถามเรื่องยอด/เงินสด/ของที่ต้องสั่ง และจำว่าอะไรสั่งไปแล้ว
+async function handleMangmee(route, env) {
+  const dateKey = todayBangkok();
+
+  if (route.kind === 'order-add' || route.kind === 'order-del') {
+    const fn = route.kind === 'order-add' ? addOrder : removeOrder;
+    const items = await fn(dateKey, route.name);
+    if (items === null) {
+      return '⚠️ ยังไม่ได้เปิด Vercel Blob จึงจำรายการที่สั่งแล้วไม่ได้ ' +
+             '(Vercel: Storage → Blob → Connect Project)';
+    }
+    const verb = route.kind === 'order-add' ? 'จำไว้แล้ว' : 'เอากลับเข้ารายการแล้ว';
+    let tail = '';
+    try {
+      const snap = await loadSnapshot(env.req);
+      const left = snap.order.filter(
+        (o) => !items.some((n) => o.name.toLowerCase().includes(n.toLowerCase())));
+      tail = `\nเหลือที่ยังต้องสั่งอีก ${left.length} รายการ — พิมพ์ "ต้องสั่งอะไรบ้าง" เพื่อดู`;
+    } catch { /* ไม่มี snapshot ก็ยังจำได้ */ }
+    return `✅ ${route.name} — ${verb}${tail}`;
+  }
+
+  let snap;
+  try {
+    snap = await loadSnapshot(env.req);
+  } catch {
+    return '⚠️ ยังไม่มีข้อมูลสรุป — ต้องรัน `mangmee.py web` ที่เครื่องร้านแล้ว push ขึ้นมาก่อน';
+  }
+  const orders = await loadOrders(dateKey);
+  const text = answer(route.kind, snap, orders);
+  if (!text) return null;
+  const stale = snap.day !== dateKey
+    ? `\n\n(ข้อมูลล่าสุดถึง ${snap.dayLabel} · อัปเดต ${snap.generated})` : '';
+  return text + stale;
 }
 
 function formatReply(r, todayKey, receivedHHMM, backdated) {

@@ -1,0 +1,342 @@
+{
+ "generated": "2026-08-04 17:42",
+ "shop": "ร้านมั่งมีฟู้ด",
+ "day": "2026-08-03",
+ "dayLabel": "3 ส.ค. 69",
+ "avg30": 234576,
+ "sales": {
+  "total": 228804,
+  "hasShift": false,
+  "am": 0,
+  "pm": 0,
+  "branches": [
+   {
+    "name": "หนองดอก",
+    "amount": 114198,
+    "pct": 50
+   },
+   {
+    "name": "จอมทอง",
+    "amount": 74331,
+    "pct": 32
+   },
+   {
+    "name": "บ้านเส้ง",
+    "amount": 40275,
+    "pct": 18
+   }
+  ]
+ },
+ "cash": {
+  "hasData": false,
+  "sales": 228804,
+  "transfer": 0,
+  "cash": 228804,
+  "accounts": []
+ },
+ "top": [
+  {
+   "rank": 1,
+   "name": "เศษเนื้อแดง",
+   "qty": "323.6 กก.",
+   "amount": 37213
+  },
+  {
+   "rank": 2,
+   "name": "เนื้อสะโพก",
+   "qty": "78.6 กก.",
+   "amount": 9830
+  },
+  {
+   "rank": 3,
+   "name": "หมูบด A",
+   "qty": "75.0 กก.",
+   "amount": 9680
+  },
+  {
+   "rank": 4,
+   "name": "สามชั้น",
+   "qty": "48.4 กก.",
+   "amount": 8186
+  },
+  {
+   "rank": 5,
+   "name": "อกไก่",
+   "qty": "92.7 กก.",
+   "amount": 7695
+  },
+  {
+   "rank": 6,
+   "name": "มั่งมีบด C (แดง)",
+   "qty": "152 แพ็ค",
+   "amount": 7600
+  },
+  {
+   "rank": 7,
+   "name": "บด(ทวี)ชมพู",
+   "qty": "113 แพ็ค",
+   "amount": 6225
+  },
+  {
+   "rank": 8,
+   "name": "บดโปร 1000ก",
+   "qty": "84 แพ็ค",
+   "amount": 5746
+  },
+  {
+   "rank": 9,
+   "name": "น่องสะโพก",
+   "qty": "59.4 กก.",
+   "amount": 5704
+  },
+  {
+   "rank": 10,
+   "name": "หมูบด B",
+   "qty": "46.9 กก.",
+   "amount": 5583
+  },
+  {
+   "rank": 11,
+   "name": "หมูสไลด์",
+   "qty": "37.6 กก.",
+   "amount": 5228
+  },
+  {
+   "rank": 12,
+   "name": "บดอนามัย(ส้ม)",
+   "qty": "91 แพ็ค",
+   "amount": 4986
+  },
+  {
+   "rank": 13,
+   "name": "สันนอก",
+   "qty": "35.1 กก.",
+   "amount": 4879
+  },
+  {
+   "rank": 14,
+   "name": "ไก่ตัด(ชิ้น)",
+   "qty": "63.7 กก.",
+   "amount": 4394
+  },
+  {
+   "rank": 15,
+   "name": "เนื้อหัวไหล่",
+   "qty": "28.2 กก.",
+   "amount": 3467
+  },
+  {
+   "rank": 16,
+   "name": "เศษสามชั้น",
+   "qty": "25.4 กก.",
+   "amount": 3259
+  },
+  {
+   "rank": 17,
+   "name": "สามชั้นสไลด์",
+   "qty": "16.1 กก.",
+   "amount": 3199
+  },
+  {
+   "rank": 18,
+   "name": "ตีนไก่ตัดเล็บ",
+   "qty": "44.4 กก.",
+   "amount": 3066
+  },
+  {
+   "rank": 19,
+   "name": "ไข่เบอร์1 (30ฟอง)",
+   "qty": "19 แพ็ค",
+   "amount": 2736
+  },
+  {
+   "rank": 20,
+   "name": "น่องติดสะโพก(ยกถุง)",
+   "qty": "3 ถุง",
+   "amount": 2700
+  }
+ ],
+ "order": [
+  {
+   "rank": 1,
+   "name": "เศษเนื้อแดง",
+   "qty": 435,
+   "unit": "กิโลกรัม",
+   "qty_text": "435 กก.",
+   "price": 111,
+   "stock": null
+  },
+  {
+   "rank": 2,
+   "name": "หมูบด A",
+   "qty": 84,
+   "unit": "กิโลกรัม",
+   "qty_text": "84 กก.",
+   "price": 126,
+   "stock": null
+  },
+  {
+   "rank": 3,
+   "name": "เนื้อสะโพก",
+   "qty": 72,
+   "unit": "กิโลกรัม",
+   "qty_text": "72 กก.",
+   "price": 121,
+   "stock": null
+  },
+  {
+   "rank": 4,
+   "name": "กระดูกซุป(สันหลัง)",
+   "qty": 134,
+   "unit": "กิโลกรัม",
+   "qty_text": "134 กก.",
+   "price": 53,
+   "stock": null
+  },
+  {
+   "rank": 5,
+   "name": "สามชั้น",
+   "qty": 42,
+   "unit": "กิโลกรัม",
+   "qty_text": "42 กก.",
+   "price": 161,
+   "stock": null
+  },
+  {
+   "rank": 6,
+   "name": "บดโปร 1000ก",
+   "qty": 91,
+   "unit": "Pcs.",
+   "qty_text": "91 แพ็ค",
+   "price": 68,
+   "stock": null
+  },
+  {
+   "rank": 7,
+   "name": "มั่งมีบด C (แดง)",
+   "qty": 100,
+   "unit": "Pcs.",
+   "qty_text": "100 แพ็ค",
+   "price": 50,
+   "stock": null
+  },
+  {
+   "rank": 8,
+   "name": "อกไก่",
+   "qty": 58,
+   "unit": "กิโลกรัม",
+   "qty_text": "58 กก.",
+   "price": 80,
+   "stock": null
+  },
+  {
+   "rank": 9,
+   "name": "บดอนามัย(ส้ม)",
+   "qty": 80,
+   "unit": "Pcs.",
+   "qty_text": "80 แพ็ค",
+   "price": 55,
+   "stock": null
+  },
+  {
+   "rank": 10,
+   "name": "บด(ทวี)ชมพู",
+   "qty": 79,
+   "unit": "Pcs.",
+   "qty_text": "79 แพ็ค",
+   "price": 55,
+   "stock": null
+  },
+  {
+   "rank": 11,
+   "name": "สันนอก",
+   "qty": 33,
+   "unit": "กิโลกรัม",
+   "qty_text": "33 กก.",
+   "price": 132,
+   "stock": null
+  },
+  {
+   "rank": 12,
+   "name": "เนื้อหัวไหล่",
+   "qty": 35,
+   "unit": "กิโลกรัม",
+   "qty_text": "35 กก.",
+   "price": 120,
+   "stock": null
+  },
+  {
+   "rank": 13,
+   "name": "หมูบด B",
+   "qty": 36,
+   "unit": "กิโลกรัม",
+   "qty_text": "36 กก.",
+   "price": 116,
+   "stock": null
+  },
+  {
+   "rank": 14,
+   "name": "น่องสะโพก",
+   "qty": 43,
+   "unit": "กิโลกรัม",
+   "qty_text": "43 กก.",
+   "price": 96,
+   "stock": null
+  },
+  {
+   "rank": 15,
+   "name": "ไก่ตัด(ชิ้น)",
+   "qty": 53,
+   "unit": "กิโลกรัม",
+   "qty_text": "53 กก.",
+   "price": 69,
+   "stock": null
+  },
+  {
+   "rank": 16,
+   "name": "สมองหมู(แพค)",
+   "qty": 27,
+   "unit": "Pcs.",
+   "qty_text": "27 แพ็ค",
+   "price": 120,
+   "stock": null
+  },
+  {
+   "rank": 17,
+   "name": "หมูสไลด์",
+   "qty": 23,
+   "unit": "กิโลกรัม",
+   "qty_text": "23 กก.",
+   "price": 139,
+   "stock": null
+  },
+  {
+   "rank": 18,
+   "name": "ซี่โครง(แผ่น)",
+   "qty": 22,
+   "unit": "กิโลกรัม",
+   "qty_text": "22 กก.",
+   "price": 136,
+   "stock": null
+  },
+  {
+   "rank": 19,
+   "name": "ตีนไก่ตัดเล็บ",
+   "qty": 40,
+   "unit": "กิโลกรัม",
+   "qty_text": "40 กก.",
+   "price": 69,
+   "stock": null
+  },
+  {
+   "rank": 20,
+   "name": "สันคอ",
+   "qty": 15,
+   "unit": "กิโลกรัม",
+   "qty_text": "15 กก.",
+   "price": 175,
+   "stock": null
+  }
+ ],
+ "ordered": []
+}
