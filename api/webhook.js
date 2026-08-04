@@ -6,6 +6,7 @@ import { storeReady, appendReport, loadDay, saveGroupId } from '../lib/store.js'
 import { fmtBaht, bangkokParts, buildDailySummary, normalizeThaiDate } from '../lib/summary.js';
 import {
   loadSnapshot, loadOrders, addOrder, removeOrder, routeText, answer, todayBangkok,
+  notice, orderAck,
 } from '../lib/mangmee.js';
 
 // อย่าให้ Vercel แกะ body — เราต้องใช้ raw body ตรวจ signature
@@ -150,8 +151,11 @@ async function handleMangmee(route, env) {
     return await mangmeeReply(route, env);
   } catch (e) {
     console.error('mangmee reply error', e);
-    return [`⚠️ ตอบไม่ได้ตอนนี้ครับ (${e?.name || 'error'}) — ลองใหม่อีกครั้ง ` +
-            'หรือพิมพ์ "ช่วย" เพื่อดูคำสั่งที่ใช้ได้'];
+    return notice('ตอบไม่ได้ตอนนี้', 'ระบบขัดข้องชั่วคราว', [
+      `เกิดข้อผิดพลาด (${e?.name || 'error'})`,
+      'ลองพิมพ์ใหม่อีกครั้ง',
+      'หรือพิมพ์ "ช่วย" เพื่อดูคำสั่งที่ใช้ได้',
+    ], { hot: true });
   }
 }
 
@@ -162,25 +166,28 @@ async function mangmeeReply(route, env) {
     const fn = route.kind === 'order-add' ? addOrder : removeOrder;
     const items = await fn(dateKey, route.name);
     if (items === null) {
-      return ['⚠️ ยังไม่ได้เปิด Vercel Blob จึงจำรายการที่สั่งแล้วไม่ได้ ' +
-              '(Vercel: Storage → Blob → Connect Project)'];
+      return notice('จำรายการไม่ได้', 'ยังไม่ได้เปิดที่เก็บข้อมูล', [
+        'ยังไม่ได้เปิด Vercel Blob จึงจำรายการที่สั่งแล้วไม่ได้',
+        'เปิดที่ Vercel: Storage → Blob → Connect Project',
+      ], { hot: true });
     }
-    const verb = route.kind === 'order-add' ? 'จำไว้แล้ว' : 'เอากลับเข้ารายการแล้ว';
-    let tail = '';
+    let left = null;
     try {
       const snap = await loadSnapshot(env.req);
-      const left = snap.order.filter(
-        (o) => !items.some((n) => o.name.toLowerCase().includes(n.toLowerCase())));
-      tail = `\nเหลือที่ยังต้องสั่งอีก ${left.length} รายการ — พิมพ์ "ต้องสั่งอะไรบ้าง" เพื่อดู`;
+      left = snap.order.filter(
+        (o) => !items.some((n) => o.name.toLowerCase().includes(n.toLowerCase()))).length;
     } catch { /* ไม่มี snapshot ก็ยังจำได้ */ }
-    return [`✅ ${route.name} — ${verb}${tail}`];
+    return orderAck(route.name, route.kind === 'order-add', items, left);
   }
 
   let snap;
   try {
     snap = await loadSnapshot(env.req);
   } catch {
-    return ['⚠️ ยังไม่มีข้อมูลสรุป — ต้องรัน `mangmee.py web` ที่เครื่องร้านแล้ว push ขึ้นมาก่อน'];
+    return notice('ยังไม่มีข้อมูลสรุป', 'รอ build จากเครื่องร้าน', [
+      'ยังไม่มีไฟล์สรุปยอดบนเซิร์ฟเวอร์',
+      'ต้องรัน mangmee.py web ที่เครื่องร้านแล้ว publish ขึ้นมาก่อน',
+    ], { hot: true });
   }
   const orders = await loadOrders(dateKey);
   const msgs = answer(route.kind, snap, orders);
