@@ -60,12 +60,24 @@ export default async function handler(req, res) {
   return res.status(200).end();
 }
 
+/**
+ * ข้อความนี้เป็นคำสั่งสรุปเงินนำส่ง (บอทอ่านสลิป) หรือเปล่า
+ *
+ * เดิมเช็คแค่ว่ามีคำว่า "สรุป" อยู่ที่ไหนก็ได้ ทำให้ "ขอสรุปสินค้าขายดี"
+ * ถูกดักไปตอบสรุปเงินนำส่งแทนที่จะเป็นยอดขายรายสินค้า
+ * จึงบังคับให้ขึ้นต้นด้วย "สรุป" และตามด้วยได้แค่ เมื่อวาน/วันนี้/วันที่ เท่านั้น
+ */
+function isSlipSummary(text) {
+  const t = (text || '').trim();
+  return /^สรุป\s*(เมื่อวาน|วันนี้|\d{1,2}[/\-.]\d{1,2}[/\-.]\d{2,4})?$/.test(t);
+}
+
 async function processEvent(event, env) {
   if (event.type !== 'message') return;
   const groupId = event.source?.groupId || null;
 
   // ---- คุยเรื่องยอดขาย/เงินสด/สั่งของ (ข้อมูลจาก mangmee) ----
-  if (event.message?.type === 'text' && !/สรุป/.test(event.message.text || '')) {
+  if (event.message?.type === 'text' && !isSlipSummary(event.message.text)) {
     // ข้อความสั้นๆ ที่ตรงคำสั่งประจำ ใช้คำสำคัญจับ (เร็ว แม่น ไม่เสียโทเคน)
     // ประโยคยาวมักเป็นคำถามที่ซับซ้อนกว่านั้น เช่น "ยอดเมื่อวานกับวันนี้ต่างกันเท่าไหร่"
     // ถ้าเอาไปเข้าคำสั่งประจำจะตอบไม่ตรงคำถาม จึงโยนให้ AI แทน
@@ -79,7 +91,7 @@ async function processEvent(event, env) {
   }
 
   // ---- ข้อความ "สรุป" → สรุปวันนี้ / "สรุปเมื่อวาน" / "สรุป 23/07/2569" ----
-  if (event.message?.type === 'text' && /สรุป/.test(event.message.text || '')) {
+  if (event.message?.type === 'text' && isSlipSummary(event.message.text)) {
     const txt = event.message.text || '';
     let { dateKey, dateLabel } = bangkokParts(event.timestamp);
     const dm = txt.match(/(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4})/);
