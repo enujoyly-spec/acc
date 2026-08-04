@@ -9,6 +9,7 @@ import {
   notice, orderAck,
 } from '../lib/mangmee.js';
 import { ask } from '../lib/ask.js';
+import { staleNote } from '../lib/flex.js';
 
 // อย่าให้ Vercel แกะ body — เราต้องใช้ raw body ตรวจ signature
 export const config = { api: { bodyParser: false } };
@@ -105,14 +106,18 @@ async function processEvent(event, env) {
     } else if (/เมื่อวาน/.test(txt)) {
       ({ dateKey, dateLabel } = bangkokParts(event.timestamp - 86400000));
     }
-    let text;
+    let msgs;
     if (!storeReady()) {
-      text = '⚠️ ยังไม่ได้เปิดที่เก็บข้อมูล (Vercel Blob) จึงสรุปรายวันไม่ได้ — เปิดที่ Vercel: Storage → Blob → Connect Project';
+      msgs = notice('สรุปรายวันไม่ได้', 'ยังไม่ได้เปิดที่เก็บข้อมูล', [
+        'ยังไม่ได้เปิด Vercel Blob',
+        'เปิดที่ Vercel: Storage → Blob → Connect Project',
+      ], { hot: true });
     } else {
       const records = await loadDay(dateKey);
-      text = buildDailySummary(records, dateLabel);
+      msgs = notice('สรุปเงินนำส่ง', dateLabel,
+                    buildDailySummary(records, dateLabel).split('\n'));
     }
-    if (event.replyToken) await replyMessage(event.replyToken, text, env.token);
+    if (event.replyToken) await replyMessage(event.replyToken, msgs, env.token);
     return;
   }
 
@@ -153,7 +158,13 @@ async function processEvent(event, env) {
   }
 
   const text = formatReply(report, dateKey, hhmm, backdated);
-  if (event.replyToken) await replyMessage(event.replyToken, text, env.token);
+  if (event.replyToken) {
+    await replyMessage(event.replyToken,
+      notice(report?.success ? 'อ่านรายงานแล้ว' : 'อ่านรูปไม่ออก',
+             backdated ? `ลงวันที่ ${report?.date}` : dateKey,
+             text.split('\n'), { hot: !report?.success }),
+      env.token);
+  }
   console.log('อ่านรายงาน:', JSON.stringify({
     docDate: report?.date, cashSales: report?.cashSales, deposit: report?.deposit, success: report?.success,
   }));
@@ -225,8 +236,10 @@ async function mangmeeReply(route, env) {
   if (!msgs?.length) return null;
 
   // ข้อมูลมาจาก snapshot ที่ build ไว้ ถ้าไม่ใช่ของวันนี้ต้องบอกให้รู้ ไม่งั้นเข้าใจผิด
-  if (snap.day !== dateKey && typeof msgs[0] === 'string') {
-    msgs[0] += `\n(ข้อมูลล่าสุดถึง ${snap.dayLabel} · อัปเดต ${snap.generated})`;
+  // ตอนนี้คำตอบเป็นกล่องทั้งหมด จึงต้องเติมบรรทัดเข้าไปในกล่อง ไม่ใช่ต่อท้ายข้อความ
+  const box = msgs[0]?.contents?.body?.contents;
+  if (snap.day !== dateKey && Array.isArray(box)) {
+    box.push(staleNote(`ข้อมูลล่าสุดถึง ${snap.dayLabel} · อัปเดต ${snap.generated}`));
   }
   return msgs;
 }
