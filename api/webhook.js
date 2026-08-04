@@ -8,6 +8,7 @@ import {
   loadSnapshot, loadOrders, addOrder, removeOrder, routeText, answer, todayBangkok,
   notice, orderAck,
 } from '../lib/mangmee.js';
+import { ask } from '../lib/ask.js';
 
 // อย่าให้ Vercel แกะ body — เราต้องใช้ raw body ตรวจ signature
 export const config = { api: { bodyParser: false } };
@@ -65,13 +66,15 @@ async function processEvent(event, env) {
 
   // ---- คุยเรื่องยอดขาย/เงินสด/สั่งของ (ข้อมูลจาก mangmee) ----
   if (event.message?.type === 'text' && !/สรุป/.test(event.message.text || '')) {
-    const route = routeText(event.message.text);
-    if (route) {
-      const msgs = await handleMangmee(route, env);
-      if (msgs?.length) {
-        if (event.replyToken) await replyMessage(event.replyToken, msgs, env.token);
-        return;
-      }
+    // ข้อความสั้นๆ ที่ตรงคำสั่งประจำ ใช้คำสำคัญจับ (เร็ว แม่น ไม่เสียโทเคน)
+    // ประโยคยาวมักเป็นคำถามที่ซับซ้อนกว่านั้น เช่น "ยอดเมื่อวานกับวันนี้ต่างกันเท่าไหร่"
+    // ถ้าเอาไปเข้าคำสั่งประจำจะตอบไม่ตรงคำถาม จึงโยนให้ AI แทน
+    const raw = (event.message.text || '').trim();
+    const route = (raw.length <= 30 && routeText(raw)) || { kind: 'ask', text: raw };
+    const msgs = await handleMangmee(route, env);
+    if (msgs?.length) {
+      if (event.replyToken) await replyMessage(event.replyToken, msgs, env.token);
+      return;
     }
   }
 
@@ -190,6 +193,22 @@ async function mangmeeReply(route, env) {
     ], { hot: true });
   }
   const orders = await loadOrders(dateKey);
+
+  // ถามอะไรก็ได้ที่คำสำคัญจับไม่ได้ → ให้ AI ตอบจาก snapshot
+  if (route.kind === 'ask') {
+    const r = await ask(route.text, snap, orders, { apiKey: env.apiKey, model: env.model });
+    if (r.action) {                     // AI ตีความว่ากำลังบอกว่าสั่งของแล้ว
+      return mangmeeReply({ kind: r.action, name: r.name }, env);
+    }
+    if (!r.reply) {
+      return notice('ยังตอบไม่ได้', 'ลองถามใหม่อีกแบบ', [
+        'ผมยังไม่เข้าใจคำถามนี้ครับ',
+        'พิมพ์ "ช่วย" เพื่อดูตัวอย่างคำถามที่ตอบได้',
+      ], { hot: true });
+    }
+    return notice('ตอบคำถาม', `${snap.dayLabel} · ${snap.shop}`, r.reply.split('\n'));
+  }
+
   const msgs = answer(route.kind, snap, orders);
   if (!msgs?.length) return null;
 
